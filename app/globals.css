@@ -1,0 +1,305 @@
+/* 薄い茶色ベースのカラーパレット */
+:root {
+  --bg: #f3ebe0;          /* ページ背景（薄いベージュ） */
+  --surface: #fbf7f1;     /* カード背景 */
+  --border: #e2d5c3;      /* 枠線・区切り線 */
+  --text: #4a3b2c;        /* 本文（こげ茶） */
+  --text-muted: #9a8670;  /* 補助テキスト */
+  --accent: #8b6b4a;      /* ボタン・アクセント（ミルクブラウン） */
+  --accent-hover: #74583b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 560px;
+  margin: 48px auto;
+  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(110, 80, 50, 0.1);
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 1.6rem;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.add-form input {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 1rem;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.add-form .due-input {
+  flex: 0 0 auto;
+  width: 150px;
+  padding: 10px 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.add-form input::placeholder {
+  color: var(--text-muted);
+}
+
+.add-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 107, 74, 0.2);
+}
+
+button {
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.filter-button:hover {
+  background: #f0e6d8;
+  color: var(--text);
+}
+
+.filter-button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* 期限切れボタンは赤系で目立たせる */
+.filter-overdue {
+  color: #b91c1c;
+  border-color: #f3c4c4;
+}
+
+.filter-overdue:hover {
+  background: #fdecec;
+  color: #b91c1c;
+}
+
+.filter-overdue.active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.filter-overdue .filter-count {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+.filter-count {
+  min-width: 20px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 999px;
+  background: rgba(139, 107, 74, 0.15);
+}
+
+.filter-button.active .filter-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.list input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.task-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.list li.done .task-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.due {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.due-today {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.due-overdue {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.add-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 8px;
+  margin-left: 8px;
+}
+
+.btn-label {
+  font-size: 0.75rem;
+}
+
+.delete:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.empty,
+.count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.count {
+  margin: 0 0 6px;
+  text-align: right;
+}
+
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  max-width: 320px;
+  padding: 12px 16px;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  word-break: break-all;
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-delete {
+  background: #dc2626;
+}
+
+/* 画面が狭いときは入力欄を折り返す */
+@media (max-width: 480px) {
+  .add-form {
+    flex-wrap: wrap;
+  }
+
+  .add-form input[type="text"] {
+    flex-basis: 100%;
+  }
+
+  .add-form .due-input {
+    flex: 1;
+    width: auto;
+  }
+}
