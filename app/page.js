@@ -6,11 +6,15 @@ const STORAGE_KEY = "todos";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
-// ローカル時間での今日の日付を "YYYY-MM-DD" で返す
-function todayString() {
-  const d = new Date();
+// Date をローカル時間の "YYYY-MM-DD" にする
+function dateKey(d) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// ローカル時間での今日の日付を "YYYY-MM-DD" で返す
+function todayString() {
+  return dateKey(new Date());
 }
 
 // "YYYY-MM-DD" を「11/6（金）」の形にする（今年以外は年も付ける）
@@ -118,8 +122,112 @@ function TrashIcon() {
   );
 }
 
+// 月表示のカレンダー。今日の日付に依存するため、クライアントでのマウント後に描画すること
+function Calendar({ todos, selected, onSelect }) {
+  const today = todayString();
+  const [view, setView] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  const moveMonth = (delta) => {
+    const d = new Date(view.year, view.month + delta, 1);
+    setView({ year: d.getFullYear(), month: d.getMonth() });
+  };
+
+  const goToday = () => {
+    const now = new Date();
+    setView({ year: now.getFullYear(), month: now.getMonth() });
+    onSelect(today);
+  };
+
+  // 日付ごとのタスク集計（期限のあるタスクのみ）
+  const stats = {};
+  for (const t of todos) {
+    if (!t.due) continue;
+    const s = (stats[t.due] ??= { total: 0, active: 0, overdue: 0 });
+    s.total += 1;
+    if (!t.done) s.active += 1;
+    if (dueStatus(t) === "overdue") s.overdue += 1;
+  }
+
+  const leadingBlanks = new Date(view.year, view.month, 1).getDay();
+  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(view.year, view.month, i + 1);
+    return { day: i + 1, key: dateKey(date), weekday: date.getDay() };
+  });
+
+  return (
+    <section className="calendar" aria-label="カレンダー">
+      <div className="calendar-header">
+        <button
+          type="button"
+          className="calendar-nav"
+          onClick={() => moveMonth(-1)}
+          aria-label="前の月"
+        >
+          ‹
+        </button>
+        <h2 className="calendar-month" aria-live="polite">
+          {view.year}年{view.month + 1}月
+        </h2>
+        <button
+          type="button"
+          className="calendar-nav"
+          onClick={() => moveMonth(1)}
+          aria-label="次の月"
+        >
+          ›
+        </button>
+        <button type="button" className="calendar-today" onClick={goToday}>
+          今日
+        </button>
+      </div>
+
+      <div className="calendar-grid">
+        {WEEKDAYS.map((w, i) => (
+          <div key={w} className={`calendar-weekday weekday-${i}`} aria-hidden="true">
+            {w}
+          </div>
+        ))}
+        {Array.from({ length: leadingBlanks }, (_, i) => (
+          <div key={`blank-${i}`} />
+        ))}
+        {days.map(({ day, key, weekday }) => {
+          const s = stats[key];
+          const isSelected = key === selected;
+          const dotType = !s ? null : s.overdue > 0 ? "overdue" : s.active > 0 ? "active" : "done";
+          const classes = [
+            "calendar-day",
+            `weekday-${weekday}`,
+            key === today && "is-today",
+            isSelected && "is-selected",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return (
+            <button
+              key={key}
+              type="button"
+              className={classes}
+              aria-pressed={isSelected}
+              aria-label={`${view.month + 1}月${day}日 タスク${s ? s.total : 0}件`}
+              onClick={() => onSelect(isSelected ? null : key)}
+            >
+              {day}
+              {dotType && <span className={`calendar-dot dot-${dotType}`} />}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const [todos, setTodos] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [text, setText] = useState("");
   const [due, setDue] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -158,8 +266,14 @@ export default function Home() {
     if (!title) return;
     setTodos([...todos, { id: Date.now(), title, done: false, due }]);
     setText("");
-    setDue("");
+    setDue(selectedDate ?? "");
     showToast(`「${title}」を追加しました`);
+  };
+
+  // 日付を選択（null で解除）し、追加フォームの期限もその日に合わせる
+  const selectDate = (date) => {
+    setSelectedDate(date);
+    setDue(date ?? "");
   };
 
   const toggleTodo = (id) => {
@@ -173,13 +287,14 @@ export default function Home() {
   };
 
   const remaining = todos.filter((t) => !t.done).length;
-  const doneCount = todos.length - remaining;
-  const overdueCount = todos.filter((t) => dueStatus(t) === "overdue").length;
+
+  // 日付を選択中は、絞り込みの件数と一覧をその日のタスクに限定する
+  const dayTodos = selectedDate ? todos.filter((t) => t.due === selectedDate) : todos;
   const counts = {
-    all: todos.length,
-    active: remaining,
-    done: doneCount,
-    overdue: overdueCount,
+    all: dayTodos.length,
+    active: dayTodos.filter((t) => !t.done).length,
+    done: dayTodos.filter((t) => t.done).length,
+    overdue: dayTodos.filter((t) => dueStatus(t) === "overdue").length,
   };
 
   const matchesFilter = (t) => {
@@ -189,16 +304,14 @@ export default function Home() {
     return true;
   };
 
-  const visibleTodos = todos.filter(matchesFilter);
+  const visibleTodos = dayTodos.filter(matchesFilter);
 
-  const emptyMessage =
-    todos.length === 0
-      ? "タスクはありません"
-      : {
-          active: "未完了のタスクはありません",
-          done: "完了したタスクはありません",
-          overdue: "期限切れのタスクはありません",
-        }[filter];
+  const dayLabel = selectedDate ? `${formatDue(selectedDate)}の` : "";
+  const filterLabel =
+    dayTodos.length === 0
+      ? ""
+      : { active: "未完了の", done: "完了した", overdue: "期限切れの" }[filter] ?? "";
+  const emptyMessage = `${dayLabel}${filterLabel}タスクはありません`;
 
   return (
     <main className="container">
@@ -216,6 +329,17 @@ export default function Home() {
       <p className="count">
         残り {remaining} 件 / 全 {todos.length} 件
       </p>
+
+      {loaded && <Calendar todos={todos} selected={selectedDate} onSelect={selectDate} />}
+
+      {selectedDate && (
+        <div className="selected-day">
+          <span>{formatDue(selectedDate)}のタスクを表示中</span>
+          <button type="button" className="selected-day-clear" onClick={() => selectDate(null)}>
+            すべての日を表示
+          </button>
+        </div>
+      )}
 
       <form onSubmit={addTodo} className="add-form">
         <input
