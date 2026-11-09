@@ -100,6 +100,25 @@ function PlusIcon() {
   );
 }
 
+function PencilIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
 function TrashIcon() {
   return (
     <svg
@@ -119,6 +138,50 @@ function TrashIcon() {
       <path d="M10 11v6" />
       <path d="M14 11v6" />
     </svg>
+  );
+}
+
+// タスク行をその場で編集するフォーム（Esc でキャンセル）
+function EditForm({ todo, onSave, onCancel }) {
+  const [title, setTitle] = useState(todo.title);
+  const [due, setDue] = useState(todo.due);
+  const trimmed = title.trim();
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (trimmed) onSave(trimmed, due);
+  };
+
+  return (
+    <form
+      className="add-form edit-form"
+      onSubmit={submit}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCancel();
+      }}
+    >
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        aria-label="タスク名"
+        autoFocus
+      />
+      <input
+        type="date"
+        className="due-input"
+        value={due}
+        onChange={(e) => setDue(e.target.value)}
+        aria-label="期限（任意）"
+        title="期限（任意）"
+      />
+      <button type="submit" disabled={!trimmed}>
+        保存
+      </button>
+      <button type="button" className="edit-cancel" onClick={onCancel}>
+        キャンセル
+      </button>
+    </form>
   );
 }
 
@@ -228,6 +291,7 @@ function Calendar({ todos, selected, onSelect }) {
 export default function Home() {
   const [todos, setTodos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [text, setText] = useState("");
   const [due, setDue] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -280,6 +344,12 @@ export default function Home() {
     setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   };
 
+  const saveEdit = (id, title, newDue) => {
+    setTodos(todos.map((t) => (t.id === id ? { ...t, title, due: newDue } : t)));
+    setEditingId(null);
+    showToast(`「${title}」を更新しました`);
+  };
+
   const deleteTodo = (id) => {
     const target = todos.find((t) => t.id === id);
     setTodos(todos.filter((t) => t.id !== id));
@@ -287,6 +357,10 @@ export default function Home() {
   };
 
   const remaining = todos.filter((t) => !t.done).length;
+
+  // 画面上部の要約は、日付の選択に関係なく全タスクを対象にする
+  const dueTodayTotal = todos.filter((t) => dueStatus(t) === "today").length;
+  const overdueTotal = todos.filter((t) => dueStatus(t) === "overdue").length;
 
   // 日付を選択中は、絞り込みの件数と一覧をその日のタスクに限定する
   const dayTodos = selectedDate ? todos.filter((t) => t.due === selectedDate) : todos;
@@ -325,6 +399,14 @@ export default function Home() {
         <ChecklistIcon />
         <span>ToDo リスト</span>
       </h1>
+
+      {loaded && (
+        <p className="summary">
+          <span className={dueTodayTotal > 0 ? "due-today" : ""}>今日まで {dueTodayTotal} 件</span>
+          ・
+          <span className={overdueTotal > 0 ? "due-overdue" : ""}>期限切れ {overdueTotal} 件</span>
+        </p>
+      )}
 
       <p className="count">
         残り {remaining} 件 / 全 {todos.length} 件
@@ -382,7 +464,16 @@ export default function Home() {
       {loaded && visibleTodos.length === 0 && <p className="empty">{emptyMessage}</p>}
 
       <ul className="list">
-        {visibleTodos.map((t) => (
+        {visibleTodos.map((t) =>
+          t.id === editingId ? (
+            <li key={t.id}>
+              <EditForm
+                todo={t}
+                onSave={(title, newDue) => saveEdit(t.id, title, newDue)}
+                onCancel={() => setEditingId(null)}
+              />
+            </li>
+          ) : (
           <li key={t.id} className={t.done ? "done" : ""}>
             <label>
               <input
@@ -402,6 +493,15 @@ export default function Home() {
               </span>
             </label>
             <button
+              className="edit"
+              onClick={() => setEditingId(t.id)}
+              aria-label={`「${t.title}」を編集`}
+              title="編集"
+            >
+              <PencilIcon />
+              <span className="btn-label">編集</span>
+            </button>
+            <button
               className="delete"
               onClick={() => deleteTodo(t.id)}
               aria-label={`「${t.title}」を削除`}
@@ -411,7 +511,8 @@ export default function Home() {
               <span className="btn-label">削除</span>
             </button>
           </li>
-        ))}
+          )
+        )}
       </ul>
     </main>
   );

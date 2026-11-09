@@ -49,6 +49,15 @@ h1 {
   flex-shrink: 0;
 }
 
+.summary {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background: #f0e6d8;
+  border-radius: 8px;
+}
+
 .calendar {
   margin-bottom: 16px;
   padding-bottom: 16px;
@@ -361,6 +370,7 @@ button:hover {
   gap: 4px;
 }
 
+.edit,
 .delete {
   display: flex;
   align-items: center;
@@ -370,6 +380,45 @@ button:hover {
   color: var(--text-muted);
   padding: 6px 8px;
   margin-left: 8px;
+}
+
+.edit + .delete {
+  margin-left: 0;
+}
+
+.edit:hover {
+  color: var(--text);
+  background: #f0e6d8;
+}
+
+.edit-form {
+  flex: 1;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.edit-form input[type="text"] {
+  flex-basis: 100%;
+}
+
+.edit-form .due-input {
+  flex: 1;
+  width: auto;
+}
+
+.edit-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-cancel {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+.edit-cancel:hover {
+  background: #f0e6d8;
 }
 
 .btn-label {
